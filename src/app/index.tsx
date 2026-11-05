@@ -1,98 +1,131 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  FlatList,
+  StyleSheet,
+} from "react-native";
+import { Item } from "@/types";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function ShoppingListScreen() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [text, setText] = useState("");
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+  const handleAddItem = () => {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    setItems((prevItems) => [
+      ...prevItems,
+      { id: String(Date.now()), name: trimmedText, done: false },
+    ]);
+    setText("");
+  };
+
+  const handleToggleItem = (id: string) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, done: !item.done } : item,
+      ),
     );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  };
+
+  const renderShoppingItem = ({ item }: { item: Item }) => (
+    <Pressable
+      onPress={() => handleToggleItem(item.id)}
+      onLongPress={() => handleRemoveItem(item.id)}
+      style={styles.row}
+    >
+      <Text style={[styles.rowText, item.done && styles.doneText]}>
+        {item.name}
+      </Text>
+      <Text
+        style={[styles.pill, item.done ? styles.pillDone : styles.pillTodo]}
+      >
+        {item.done ? "✔" : "•"}
+      </Text>
+    </Pressable>
   );
-}
 
-export default function HomeScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <View style={styles.container}>
+      <Text style={styles.title}>🛒 Lista de Compras</Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      <View style={styles.inputRow}>
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder="Agregar producto (ej: Leche)"
+          style={styles.input}
+          returnKeyType="done"
+          onSubmitEditing={handleAddItem}
+        />
+        <Pressable style={styles.addBtn} onPress={handleAddItem}>
+          <Text style={styles.addTxt}>Agregar</Text>
+        </Pressable>
+      </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        renderItem={renderShoppingItem}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Sin productos. ¡Agregá el primero! 😊
+          </Text>
+        }
+        ItemSeparatorComponent={() => <View style={styles.sep} />}
+        contentContainerStyle={{ paddingBottom: 32 }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, padding: 16, gap: 12, backgroundColor: "#fff" },
+  title: { fontSize: 24, fontWeight: "bold", marginTop: 12 },
+  inputRow: { flexDirection: "row", gap: 8 },
+  input: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  addBtn: {
+    backgroundColor: "#1e90ff",
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  addTxt: { color: "#fff", fontWeight: "600" },
+  row: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  title: {
-    textAlign: 'center',
+  rowText: { fontSize: 16 },
+  doneText: { textDecorationLine: "line-through", color: "#999" },
+  pill: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    textAlign: "center",
+    textAlignVertical: "center",
+    fontWeight: "700",
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  pillTodo: { backgroundColor: "#eee", color: "#666" },
+  pillDone: { backgroundColor: "#2ecc71", color: "#fff" },
+  sep: { height: 1, backgroundColor: "#eee" },
+  empty: { textAlign: "center", color: "#777", marginTop: 24 },
 });
