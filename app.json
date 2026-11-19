@@ -2,7 +2,7 @@
   "expo": {
     "name": "lista-compras",
     "slug": "lista-compras",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "listacompras",
@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Este juego necesita acceso al micrófono para controlar el rompecabezas con tu voz."
+        "NSMicrophoneUsageDescription": "Este juego necesita acceso al micrófono para controlar la historia del dinosaurio con tu voz."
       }
     },
     "android": {
@@ -19,21 +19,11 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "permissions": [
-        "AUDIO_RECORDING",
-        "MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.thomasteagua123.listacompras"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-av",
-        {
-          "microphonePermission": "Permitir que la app use el micrófono para el juego de voz."
-        }
-      ]
-    ]
+    "plugins": ["expo-router", "expo-audio"]
   }
 }

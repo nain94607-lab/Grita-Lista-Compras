@@ -1,74 +1,35 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Animated,
-  Easing,
-  LayoutChangeEvent,
-  PanResponder,
-} from "react-native";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { View, Text, StyleSheet, Animated, Easing } from "react-native";
 import { useGritoDinosaurio } from "../hooks/useGritoDinosaurio";
 
 export default function PantallaApocalipsisCretacico() {
-  const { tiempoVivo, intensidad, cambiarIntensidad } = useGritoDinosaurio();
+  const { tiempoVivo, intensidad, microListo, errorMicro } =
+    useGritoDinosaurio();
 
-  const anchoBarraRef = useRef(290);
   const [faseTiempo, setFaseTiempo] = useState(0);
 
   const posArbolesX = useRef(new Animated.Value(0)).current;
   const caidaMeteoritoGigante = useRef(new Animated.Value(0)).current;
 
-  // Faceta 1: Entra y pone el huevo
   const posDinoEntrada = useRef(new Animated.Value(-130)).current;
   const mostrarHuevo = useRef(new Animated.Value(0)).current;
 
-  // Faceta 2: Se rompe el huevo y nace la cría
   const romperHuevo = useRef(new Animated.Value(1)).current;
   const saltoCria = useRef(new Animated.Value(0)).current;
 
-  // Faceta 3: Crece y come
   const escalaCrecimiento = useRef(new Animated.Value(0.85)).current;
   const movimientoComer = useRef(new Animated.Value(0)).current;
 
-  // Faceta 4: Manada recorriendo el suelo de izquierda a derecha hasta salir
   const marchaManada = useRef(new Animated.Value(-160)).current;
   const pasoManadaY = useRef(new Animated.Value(0)).current;
 
-  // Faceta 5: Pelea contra T-Rex / Giganotosaurus
   const embestidaDino = useRef(new Animated.Value(0)).current;
   const embestidaRex = useRef(new Animated.Value(0)).current;
-
-  const actualizarDesdeX = useCallback(
-    (x: number) => {
-      const ancho = anchoBarraRef.current || 290;
-      const xClamped = Math.max(0, Math.min(ancho, x));
-      cambiarIntensidad(xClamped / ancho);
-    },
-    [cambiarIntensidad],
-  );
-
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (evt) => {
-          actualizarDesdeX(evt.nativeEvent.locationX);
-        },
-        onPanResponderMove: (evt) => {
-          actualizarDesdeX(evt.nativeEvent.locationX);
-        },
-        onPanResponderTerminationRequest: () => false,
-      }),
-    [actualizarDesdeX],
-  );
 
   const esSilencio = intensidad < 0.05;
   const perdistePorVolumen = intensidad > 0.9;
 
-  // 0 = Sin volumen
+  // 0 = Silencio
   // 1 = Pone el huevo
   // 2 = Se rompe el huevo y nace
   // 3 = Crece
@@ -92,7 +53,6 @@ export default function PantallaApocalipsisCretacico() {
     facetaActual = 5;
   }
 
-  // Variación de especie según el tramo de intensidad para que no sea siempre igual
   const varianteEspecie = useMemo(() => {
     if (intensidad < 0.35) return 0;
     if (intensidad < 0.55) return 1;
@@ -100,10 +60,9 @@ export default function PantallaApocalipsisCretacico() {
     return 3;
   }, [intensidad]);
 
-  // A mayor volumen, menor duración (más rápido)
+  // A mayor volumen de voz, más rápida corre la animación
   const factorVelocidad = Math.max(0.22, 1 - intensidad * 0.78);
 
-  // Ciclo del día
   useEffect(() => {
     if (perdistePorVolumen || esSilencio) return;
     const reloj = setInterval(() => {
@@ -112,7 +71,6 @@ export default function PantallaApocalipsisCretacico() {
     return () => clearInterval(reloj);
   }, [perdistePorVolumen, esSilencio, factorVelocidad]);
 
-  // Parallax del suelo/árboles
   useEffect(() => {
     if (perdistePorVolumen || esSilencio) return;
     posArbolesX.setValue(0);
@@ -128,7 +86,6 @@ export default function PantallaApocalipsisCretacico() {
     return () => loopArboles.stop();
   }, [posArbolesX, perdistePorVolumen, esSilencio, factorVelocidad]);
 
-  // Animación por faceta
   useEffect(() => {
     if (esSilencio || perdistePorVolumen) return;
 
@@ -211,7 +168,6 @@ export default function PantallaApocalipsisCretacico() {
       ]);
       animActiva.start();
     } else if (facetaActual === 4) {
-      // Recorrido completo de izquierda a derecha hasta salir de la pantalla, pegados al suelo
       marchaManada.setValue(-170);
       pasoManadaY.setValue(0);
 
@@ -303,7 +259,6 @@ export default function PantallaApocalipsisCretacico() {
     embestidaRex,
   ]);
 
-  // Faceta 6: Meteorito y extinción
   useEffect(() => {
     if (perdistePorVolumen) {
       caidaMeteoritoGigante.setValue(0);
@@ -327,7 +282,6 @@ export default function PantallaApocalipsisCretacico() {
 
   const renderizarDinoVariado = (variante: number) => {
     if (variante === 1) {
-      // Estegosaurio
       return (
         <View style={styles.dinoCaja}>
           <View style={styles.estegoCola} />
@@ -342,7 +296,6 @@ export default function PantallaApocalipsisCretacico() {
       );
     }
     if (variante === 2) {
-      // Braquiosaurio
       return (
         <View style={styles.dinoCaja}>
           <View style={styles.braquioCola} />
@@ -355,7 +308,6 @@ export default function PantallaApocalipsisCretacico() {
       );
     }
     if (variante === 3) {
-      // Terópodo / Cresta
       return (
         <View style={styles.dinoCaja}>
           <View style={styles.teroCola} />
@@ -368,7 +320,6 @@ export default function PantallaApocalipsisCretacico() {
         </View>
       );
     }
-    // Triceratops por defecto
     return (
       <View style={styles.dinoCaja}>
         <View style={styles.triceratopsCola} />
@@ -466,7 +417,6 @@ export default function PantallaApocalipsisCretacico() {
     }
 
     if (facetaActual === 4) {
-      // Manada variada (3 dinos distintos) caminando sobre el suelo hasta salir por la derecha
       return (
         <Animated.View
           style={[
@@ -533,15 +483,12 @@ export default function PantallaApocalipsisCretacico() {
     return null;
   };
 
-  const manejarLayoutBarra = (e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width;
-    if (w > 0) anchoBarraRef.current = w;
-  };
-
   const infoFacetas: Record<number, { titulo: string; desc: string }> = {
     0: {
       titulo: "SILENCIO",
-      desc: "Sube el volumen para iniciar la vida del dinosaurio.",
+      desc: errorMicro
+        ? errorMicro
+        : "Habla o hacé ruido en el micrófono para despertar la historia.",
     },
     1: {
       titulo: "1. PONE EL HUEVO",
@@ -576,7 +523,7 @@ export default function PantallaApocalipsisCretacico() {
       <Text style={styles.tituloArcade}>LITERATURA DIGITAL: GRITA</Text>
       <Text style={styles.subtituloArcade}>
         {esSilencio
-          ? "[ SIN VOLUMEN ]"
+          ? "[ ESCUCHANDO MICRÓFONO... ]"
           : perdistePorVolumen
             ? "☠️ [ PERDISTE POR EXCESO DE VOLUMEN ]"
             : faseTiempo === 0
@@ -589,7 +536,7 @@ export default function PantallaApocalipsisCretacico() {
       <View style={styles.marcadorPanel}>
         <Text style={styles.textoMarcador}>FACETA: {facetaActual} / 6</Text>
         <Text style={styles.textoMarcador}>
-          VOLUMEN: {Math.round(intensidad * 100)}%
+          VOZ: {Math.round(intensidad * 100)}%
         </Text>
         <Text style={styles.textoMarcador}>TIEMPO: {tiempoVivo}s</Text>
       </View>
@@ -612,9 +559,11 @@ export default function PantallaApocalipsisCretacico() {
       >
         {esSilencio ? (
           <View style={styles.pantallaApagadaContainer}>
-            <Text style={styles.textoApagado}>💤 VOLUMEN EN 0%</Text>
+            <Text style={styles.textoApagado}>
+              {microListo ? "🎤 MICRÓFONO LISTO" : "🎤 INICIANDO MIC..."}
+            </Text>
             <Text style={styles.textoSubApagado}>
-              Desliza la barra inferior para ver las etapas
+              {errorMicro || "Hacé sonido para avanzar en la historia"}
             </Text>
           </View>
         ) : (
@@ -714,12 +663,9 @@ export default function PantallaApocalipsisCretacico() {
                 <Text style={styles.textoDerrotaTitulo}>
                   PERDISTE POR EXCESO DE VOLUMEN
                 </Text>
-                <Pressable
-                  style={styles.botonReintentar}
-                  onPress={() => cambiarIntensidad(0)}
-                >
-                  <Text style={styles.textoReintentar}>REINICIAR</Text>
-                </Pressable>
+                <Text style={styles.textoSubDerrota}>
+                  Bajá el volumen de voz para calma
+                </Text>
               </View>
             )}
           </>
@@ -745,77 +691,6 @@ export default function PantallaApocalipsisCretacico() {
           {actualInfo.titulo}: {actualInfo.desc}
         </Text>
       </View>
-
-      <View style={styles.panelControl}>
-        <Text style={styles.etiquetaControl}>
-          {esSilencio
-            ? "👆 SUBE EL VOLUMEN PARA AVANZAR"
-            : perdistePorVolumen
-              ? "☠️ ¡EXCESO DE VOLUMEN! ECOSISTEMA DESTRUIDO"
-              : "DESLIZA PARA AVANZAR FACETAS Y ACELERAR"}
-        </Text>
-
-        <View
-          style={styles.barraPista}
-          onLayout={manejarLayoutBarra}
-          {...panResponder.panHandlers}
-        >
-          <View
-            pointerEvents="none"
-            style={[
-              styles.barraRelleno,
-              {
-                width: `${intensidad * 100}%`,
-                backgroundColor: perdistePorVolumen
-                  ? "#ff0054"
-                  : esSilencio
-                    ? "#1d3557"
-                    : "#38b000",
-              },
-            ]}
-          />
-          <View
-            pointerEvents="none"
-            style={[
-              styles.perillaTactil,
-              { left: `${Math.min(92, Math.max(0, intensidad * 92))}%` },
-            ]}
-          />
-        </View>
-
-        <View style={styles.filaAtajos}>
-          <Pressable
-            style={styles.botonAtajo}
-            onPress={() => cambiarIntensidad(0)}
-          >
-            <Text style={styles.textoAtajo}>0%</Text>
-          </Pressable>
-          <Pressable
-            style={styles.botonAtajo}
-            onPress={() => cambiarIntensidad(0.15)}
-          >
-            <Text style={styles.textoAtajo}>HUEVO</Text>
-          </Pressable>
-          <Pressable
-            style={styles.botonAtajo}
-            onPress={() => cambiarIntensidad(0.3)}
-          >
-            <Text style={styles.textoAtajo}>NACE</Text>
-          </Pressable>
-          <Pressable
-            style={styles.botonAtajo}
-            onPress={() => cambiarIntensidad(0.65)}
-          >
-            <Text style={styles.textoAtajo}>MANADA</Text>
-          </Pressable>
-          <Pressable
-            style={styles.botonAtajo}
-            onPress={() => cambiarIntensidad(0.82)}
-          >
-            <Text style={styles.textoAtajo}>PELEA</Text>
-          </Pressable>
-        </View>
-      </View>
     </View>
   );
 }
@@ -827,7 +702,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
-    gap: 8,
+    gap: 10,
   },
   tituloArcade: {
     fontSize: 10,
@@ -844,7 +719,7 @@ const styles = StyleSheet.create({
   },
   marcadorPanel: {
     backgroundColor: "#111511",
-    paddingVertical: 5,
+    paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 6,
     width: "100%",
@@ -861,7 +736,7 @@ const styles = StyleSheet.create({
   },
   pantallaArcade: {
     width: 320,
-    height: 245,
+    height: 255,
     borderRadius: 8,
     borderWidth: 3,
     borderColor: "#40916c",
@@ -883,7 +758,7 @@ const styles = StyleSheet.create({
   },
   textoSubApagado: {
     color: "#6c757d",
-    fontSize: 8,
+    fontSize: 8.5,
     textAlign: "center",
     paddingHorizontal: 20,
   },
@@ -1471,18 +1346,12 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: "900",
     textAlign: "center",
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  botonReintentar: {
-    backgroundColor: "#ff0054",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-  },
-  textoReintentar: {
-    color: "#fff",
+  textoSubDerrota: {
+    color: "#ffb3c1",
     fontSize: 8,
-    fontWeight: "900",
+    textAlign: "center",
   },
 
   sueloPasto: {
@@ -1516,7 +1385,7 @@ const styles = StyleSheet.create({
 
   cajaDialogo: {
     backgroundColor: "#111511",
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
     width: "100%",
@@ -1530,58 +1399,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  panelControl: {
-    width: "100%",
-    maxWidth: 320,
-    backgroundColor: "#111511",
-    padding: 10,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: "#2d6a4f",
-    gap: 8,
-    alignItems: "center",
-  },
-  etiquetaControl: {
-    color: "#d8f3dc",
-    fontSize: 8,
-    fontWeight: "bold",
-    letterSpacing: 0.8,
-  },
-  barraPista: {
-    width: 290,
-    height: 24,
-    backgroundColor: "#000",
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#52b788",
-    overflow: "hidden",
-    justifyContent: "center",
-    position: "relative",
-  },
-  barraRelleno: { height: "100%" },
-  perillaTactil: {
-    position: "absolute",
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#fff",
-    borderWidth: 2,
-    borderColor: "#000",
-  },
-  filaAtajos: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    gap: 4,
-  },
-  botonAtajo: {
-    flex: 1,
-    backgroundColor: "#1b261b",
-    paddingVertical: 5,
-    alignItems: "center",
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#40916c",
-  },
-  textoAtajo: { color: "#fff", fontSize: 6.5, fontWeight: "bold" },
 });

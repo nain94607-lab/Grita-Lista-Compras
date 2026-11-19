@@ -4,7 +4,8 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.27",
-    "expo": "^58.0.25",
+    "expo": "58.0.0",
+    "expo-audio": "~58.0.12",
     "expo-av": "^16.0.8",
     "expo-blur": "~58.0.6",
     "expo-constants": "~58.0.15",
